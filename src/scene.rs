@@ -45,7 +45,7 @@ impl Camera {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Scene {
     pub materials: Vec<Material>,
     pub objects: Vec<Object>,
