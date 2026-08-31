@@ -19,6 +19,32 @@ impl Object {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct Camera {
+    pub image_width: u32,
+    pub image_height: u32,
+    pub center: Vec3A,
+    pub pixel00_loc: Vec3A,
+    pub pixel_delta_u: Vec3A,
+    pub pixel_delta_v: Vec3A,
+    pub focus_dist: f32,
+    pub defocus_disk_u: Vec3A,
+    pub defocus_disk_v: Vec3A,
+}
+impl Camera {
+    pub fn new(
+        aspect_ratio: f32,
+        image_width: u32,
+        vfov: f32,
+        lookfrom: Vec3A,
+        lookat: Vec3A,
+        vup: Vec3A,
+        defocus_angle: f32,
+        focus_dist: f32,
+    ) {
+    }
+}
+
 #[derive(Debug)]
 pub struct Scene {
     pub materials: Vec<Material>,
