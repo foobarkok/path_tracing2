@@ -1,5 +1,8 @@
 use glam::*;
+use obvhs::ray::Ray;
 use std::f32;
+
+use crate::vec_util;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Camera {
@@ -12,6 +15,7 @@ pub struct Camera {
     pub focus_dist: f32,
     pub defocus_disk_u: Vec3A,
     pub defocus_disk_v: Vec3A,
+    pub defocus_angle: f32,
 }
 impl Camera {
     pub fn new(
@@ -66,6 +70,21 @@ impl Camera {
             focus_dist,
             defocus_disk_u,
             defocus_disk_v,
+            defocus_angle,
         }
+    }
+    pub fn get_ray(&self, i: u32, j: u32) -> Ray {
+        let offset_x = fastrand::f32() - 0.5;
+        let offset_y = fastrand::f32() - 0.5;
+        let pixel_sample = self.pixel00_loc
+            + (i as f32 + offset_x) * self.pixel_delta_u
+            + (j as f32 + offset_y) * self.pixel_delta_u;
+        let origin = if self.defocus_angle <= 0.0 {
+            self.center
+        } else {
+            let p = vec_util::random_in_unit_disk();
+            self.center + p.x * self.defocus_disk_u + p.y * self.defocus_disk_v
+        };
+        Ray::new_inf(origin, pixel_sample - origin)
     }
 }

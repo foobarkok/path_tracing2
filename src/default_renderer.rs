@@ -1,21 +1,64 @@
 use crate::camera::Camera;
 use crate::material::Material;
-use crate::scene::{self, Renderer, Scene};
+use crate::scene::{Renderer, Scene};
 use crate::vec_util;
 use glam::*;
-use obvhs::ray::{self, Ray, RayHit};
+use obvhs::ray::{Ray, RayHit};
 use obvhs::{BvhBuildParams, cwbvh::CwBvh, cwbvh::builder::build_cwbvh};
+use std::io::{self, Write};
+use std::time::Duration;
 
 pub struct DefaultRendererConfig {
     pub samples_per_pixel: u32,
-    pub max_depth: u32,
+    pub max_depth: i32,
     pub bvh_params: BvhBuildParams,
 }
 
 pub struct DefaultRenderer;
 impl Renderer for DefaultRenderer {
     type Config = DefaultRendererConfig;
-    fn render(scene: Scene, camera: Camera, config: Self::Config) {}
+    fn render(scene: Scene, camera: Camera, config: Self::Config) {
+        let mut core_build_time = Duration::default();
+        let bvh = build_cwbvh(&scene.objects, config.bvh_params, &mut core_build_time);
+
+        let image_width = camera.image_width;
+        let image_height = camera.image_height;
+
+        println!("P3");
+        println!("{image_width}");
+        println!("{image_height}");
+        println!("255");
+
+        for j in 0..image_height {
+            eprint!("\r\x1B[2KScanlines remaining:{}", image_height - j);
+            io::stderr().flush().unwrap();
+            let pixel_colors: Vec<_> = (0..image_width)
+                .into_iter()
+                .map(|i| {
+                    if config.samples_per_pixel == 1 {
+                        let pixel_center = camera.pixel00_loc
+                            + camera.pixel_delta_u * i as f32
+                            + camera.pixel_delta_v * j as f32;
+                        let r = Ray::new_inf(camera.center, pixel_center - camera.center);
+                        Self::ray_color(&scene, &bvh, &r, config.max_depth)
+                    } else {
+                        (0..config.samples_per_pixel)
+                            .map(|_| {
+                                let r = camera.get_ray(i, j);
+                                Self::ray_color(&scene, &bvh, &r, config.max_depth)
+                            })
+                            .sum::<Vec3A>()
+                            / config.samples_per_pixel as f32
+                    }
+                })
+                .collect();
+            for pixel_color in pixel_colors {
+                vec_util::write_color(pixel_color);
+            }
+        }
+        eprintln!();
+        eprintln!("Done.");
+    }
 }
 struct Scattered {
     attenuation: Vec3A,
