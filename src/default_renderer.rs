@@ -29,7 +29,7 @@ pub struct HitRecord {
     normal: Vec3A,
 }
 impl DefaultRenderer {
-    fn ray_color(scene: &Scene, bvh: &CwBvh, ray: Ray, depth: i32) -> Vec3A {
+    fn ray_color(scene: &Scene, bvh: &CwBvh, ray: &Ray, depth: i32) -> Vec3A {
         if depth < 0 {
             return Vec3A::ZERO;
         }
@@ -44,7 +44,7 @@ impl DefaultRenderer {
                 hit_record.normal,
             ) {
                 return scattered.attenuation
-                    * Self::ray_color(scene, bvh, scattered.scattered, depth - 1);
+                    * Self::ray_color(scene, bvh, &scattered.scattered, depth - 1);
             }
             return Vec3A::ZERO;
         }
@@ -52,11 +52,11 @@ impl DefaultRenderer {
         let a = (ray.direction.normalize().y + 1.0) * 0.5;
         Vec3A::new(1.0, 1.0, 1.0) * (1.0 - a) + Vec3A::new(0.5, 0.7, 1.0) * a
     }
-    fn hit(scene: &Scene, bvh: &CwBvh, ray_in: Ray) -> Option<HitRecord> {
+    fn hit(scene: &Scene, bvh: &CwBvh, ray_in: &Ray) -> Option<HitRecord> {
         let mut ray_hit = RayHit::none();
         let mut normal = Vec3A::ZERO;
         let mut obj_id: usize = 0;
-        if bvh.ray_traverse(ray_in, &mut ray_hit, |ray, id| {
+        if bvh.ray_traverse(*ray_in, &mut ray_hit, |ray, id| {
             obj_id = bvh.primitive_indices[id] as usize;
             scene.objects[obj_id].intersect_and_normal(ray, &mut normal)
         }) {
@@ -74,7 +74,7 @@ impl DefaultRenderer {
         }
     }
     fn scatter(
-        ray_in: Ray,
+        ray_in: &Ray,
         t: f32,
         hit_pos: Vec3A,
         front_face: bool,
