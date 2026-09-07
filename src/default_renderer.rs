@@ -3,11 +3,13 @@ use crate::material::Material;
 use crate::scene::{Renderer, Scene};
 use crate::vec_util;
 use glam::*;
-use obvhs::ray::Ray;
+use obvhs::ray::{self, Ray, RayHit};
+use obvhs::{BvhBuildParams, cwbvh::CwBvh, cwbvh::builder::build_cwbvh};
 
 pub struct DefaultRendererConfig {
     pub samples_per_pixel: u32,
     pub max_depth: u32,
+    pub bvh_params: BvhBuildParams,
 }
 
 pub struct DefaultRenderer;
@@ -19,7 +21,35 @@ struct Scattered {
     attenuation: Vec3A,
     scattered: Ray,
 }
+pub struct HitRecord {
+    t: f32,
+    hit_pos: Vec3A,
+    front_face: bool,
+    material_id: usize,
+    normal: Vec3A,
+}
 impl DefaultRenderer {
+    fn hit(scene: &Scene, bvh: CwBvh, ray_in: Ray) -> Option<HitRecord> {
+        let mut ray_hit = RayHit::none();
+        let mut normal = Vec3A::ZERO;
+        let mut obj_id: usize = 0;
+        if bvh.ray_traverse(ray_in, &mut ray_hit, |ray, id| {
+            obj_id = bvh.primitive_indices[id] as usize;
+            scene.objects[obj_id].intersect_and_normal(ray, &mut normal)
+        }) {
+            let front_face = ray_in.direction.dot(normal) < 0.0;
+            let normal = if front_face { normal } else { -normal };
+            Some(HitRecord {
+                t: ray_hit.t,
+                hit_pos: ray_in.origin + ray_in.direction * ray_hit.t,
+                front_face: front_face,
+                material_id: scene.objects[obj_id].material_id,
+                normal,
+            })
+        } else {
+            None
+        }
+    }
     fn scatter(
         ray_in: &Ray,
         t: f32,
