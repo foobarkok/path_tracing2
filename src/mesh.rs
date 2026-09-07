@@ -1,3 +1,5 @@
+use std::f32;
+
 use glam::*;
 use obvhs::{Boundable, aabb::Aabb, ray::Ray, triangle::Triangle};
 
@@ -24,18 +26,19 @@ impl Mesh {
                 let c = oc.length_squared() - r * r;
                 let discriminant = h * h - a * c;
                 if discriminant < 0.0 {
-                    return -1.0;
+                    return f32::INFINITY;
                 }
                 let sqrtd = discriminant.sqrt();
                 let mut root = (h - sqrtd) / a;
                 if root <= ray.tmin || ray.tmax <= root {
                     root = (h + sqrtd) / a;
                     if root <= ray.tmin || ray.tmax <= root {
-                        return -1.0;
+                        return f32::INFINITY;
                     }
                 }
 
-                *normal = (root - center) / r;
+                let hit_pos = ray.origin + ray.direction * root;
+                *normal = (hit_pos - center) / r;
                 root
             }
         }

@@ -399,6 +399,7 @@ dependencies = [
  "fastrand",
  "glam",
  "obvhs",
+ "rayon",
 ]
 
 [[package]]

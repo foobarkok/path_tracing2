@@ -6,7 +6,9 @@ use crate::vec_util;
 use glam::*;
 use obvhs::ray::{Ray, RayHit};
 use obvhs::{BvhBuildParams, cwbvh::CwBvh, cwbvh::builder::build_cwbvh};
+use rayon::prelude::*;
 use std::io::{self, Write};
+use std::path::Component::Normal;
 use std::time::Duration;
 
 pub struct DefaultRendererConfig {
@@ -34,7 +36,7 @@ impl Renderer for DefaultRenderer {
             eprint!("\r\x1B[2KScanlines remaining:{}", image_height - j);
             io::stderr().flush().unwrap();
             let pixel_colors: Vec<_> = (0..image_width)
-                .into_iter()
+                .into_par_iter()
                 .map(|i| {
                     if config.samples_per_pixel == 1 {
                         let pixel_center = camera.pixel00_loc
@@ -74,7 +76,7 @@ pub struct HitRecord {
 }
 impl DefaultRenderer {
     fn ray_color(scene: &Scene, bvh: &CwBvh, ray: &Ray, depth: i32) -> Vec3A {
-        if depth < 0 {
+        if depth <= 0 {
             return Vec3A::ZERO;
         }
 
@@ -98,18 +100,29 @@ impl DefaultRenderer {
     }
     fn hit(scene: &Scene, bvh: &CwBvh, ray_in: &Ray) -> Option<HitRecord> {
         let mut ray_hit = RayHit::none();
-        let mut normal = Vec3A::ZERO;
-        let mut obj_id: usize = 0;
+
+        // 1. クロージャ内では交差距離 t のみを返す
         if bvh.ray_traverse(*ray_in, &mut ray_hit, |ray, id| {
-            obj_id = bvh.primitive_indices[id] as usize;
-            scene.objects[obj_id].intersect_and_normal(ray, &mut normal)
+            let prim_id = bvh.primitive_indices[id] as usize;
+            let mut dummy_normal = Vec3A::ZERO;
+            scene.objects[prim_id].intersect_and_normal(ray, &mut dummy_normal)
         }) {
+            // 2. 最至近でヒットしたオブジェクトの ID を取得
+            let obj_id = bvh.primitive_indices[ray_hit.primitive_id as usize] as usize;
+            let hit_pos = ray_in.origin + ray_in.direction * ray_hit.t;
+
+            // 3. 最至近オブジェクトの法線を再計算
+            let mut normal = Vec3A::ZERO;
+            scene.objects[obj_id]
+                .intersect_and_normal(&Ray::new_inf(ray_in.origin, ray_in.direction), &mut normal);
+
             let front_face = ray_in.direction.dot(normal) < 0.0;
             let normal = if front_face { normal } else { -normal };
+
             Some(HitRecord {
                 t: ray_hit.t,
-                hit_pos: ray_in.origin + ray_in.direction * ray_hit.t,
-                front_face: front_face,
+                hit_pos,
+                front_face,
                 material_id: scene.objects[obj_id].material_id,
                 normal,
             })

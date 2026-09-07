@@ -76,7 +76,7 @@ impl Camera {
         let offset_y = fastrand::f32() - 0.5;
         let pixel_sample = self.pixel00_loc
             + (i as f32 + offset_x) * self.pixel_delta_u
-            + (j as f32 + offset_y) * self.pixel_delta_u;
+            + (j as f32 + offset_y) * self.pixel_delta_v;
         let origin = if self.defocus_angle <= 0.0 {
             self.center
         } else {
