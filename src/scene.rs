@@ -104,5 +104,6 @@ impl Scene {
 }
 
 pub trait Renderer {
-    fn render(scene: Scene);
+    type Config;
+    fn render(scene: Scene, camera: Camera, config: Self::Config);
 }

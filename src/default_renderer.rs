@@ -1,12 +1,18 @@
 use crate::material::Material;
-use crate::scene::{Object, Renderer, Scene};
+use crate::scene::{Camera, Object, Renderer, Scene};
 use crate::vec_util;
 use glam::*;
 use obvhs::ray::Ray;
 
+pub struct DefaultRendererConfig {
+    pub samples_per_pixel: u32,
+    pub max_depth: u32,
+}
+
 pub struct DefaultRenderer;
 impl Renderer for DefaultRenderer {
-    fn render(scene: Scene) {}
+    type Config = DefaultRendererConfig;
+    fn render(scene: Scene, camera: Camera, config: Self::Config) {}
 }
 struct Scattered {
     attenuation: Vec3A,
