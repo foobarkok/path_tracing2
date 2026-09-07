@@ -1,6 +1,6 @@
 use crate::camera::Camera;
 use crate::material::Material;
-use crate::scene::{Renderer, Scene};
+use crate::scene::{self, Renderer, Scene};
 use crate::vec_util;
 use glam::*;
 use obvhs::ray::{self, Ray, RayHit};
@@ -29,7 +29,30 @@ pub struct HitRecord {
     normal: Vec3A,
 }
 impl DefaultRenderer {
-    fn hit(scene: &Scene, bvh: CwBvh, ray_in: Ray) -> Option<HitRecord> {
+    fn ray_color(scene: &Scene, bvh: &CwBvh, ray: Ray, depth: i32) -> Vec3A {
+        if depth < 0 {
+            return Vec3A::ZERO;
+        }
+
+        if let Some(hit_record) = Self::hit(scene, bvh, ray) {
+            if let Some(scattered) = Self::scatter(
+                ray,
+                hit_record.t,
+                hit_record.hit_pos,
+                hit_record.front_face,
+                scene.materials[hit_record.material_id],
+                hit_record.normal,
+            ) {
+                return scattered.attenuation
+                    * Self::ray_color(scene, bvh, scattered.scattered, depth - 1);
+            }
+            return Vec3A::ZERO;
+        }
+
+        let a = (ray.direction.normalize().y + 1.0) * 0.5;
+        Vec3A::new(1.0, 1.0, 1.0) * (1.0 - a) + Vec3A::new(0.5, 0.7, 1.0) * a
+    }
+    fn hit(scene: &Scene, bvh: &CwBvh, ray_in: Ray) -> Option<HitRecord> {
         let mut ray_hit = RayHit::none();
         let mut normal = Vec3A::ZERO;
         let mut obj_id: usize = 0;
@@ -51,9 +74,9 @@ impl DefaultRenderer {
         }
     }
     fn scatter(
-        ray_in: &Ray,
+        ray_in: Ray,
         t: f32,
-        hit_pos: &Vec3A,
+        hit_pos: Vec3A,
         front_face: bool,
         material: Material,
         normal: Vec3A,
@@ -63,7 +86,7 @@ impl DefaultRenderer {
                 let direction = normal + vec_util::random_unit_vector();
                 Some(Scattered {
                     attenuation: albedo,
-                    scattered: new_ray(*hit_pos, direction),
+                    scattered: new_ray(hit_pos, direction),
                 })
             }
             Material::Metal { albedo, fuzz } => {
@@ -72,7 +95,7 @@ impl DefaultRenderer {
                 if reflected.dot(normal) > 0.0 {
                     Some(Scattered {
                         attenuation: albedo,
-                        scattered: new_ray(*hit_pos, reflected),
+                        scattered: new_ray(hit_pos, reflected),
                     })
                 } else {
                     None
@@ -96,7 +119,7 @@ impl DefaultRenderer {
                     };
                 Some(Scattered {
                     attenuation: Vec3A::ONE,
-                    scattered: new_ray(*hit_pos, direction),
+                    scattered: new_ray(hit_pos, direction),
                 })
             }
         }
