@@ -157,13 +157,14 @@ impl DefaultRenderer {
                 let unit_dir = ray_in.direction.normalize();
                 let cos_theta = -unit_dir.dot(normal);
                 let cos_theta = if cos_theta < 1.0 { cos_theta } else { 1.0 };
-                let sin_theta = (1.0 - cos_theta * cos_theta).sqrt(); // todo: remove this sprt
-                let direction =
-                    if ri * sin_theta > 1.0 || reflectance(cos_theta, ri) > fastrand::f32() {
-                        unit_dir.reflect(normal)
-                    } else {
-                        unit_dir.refract(normal, ri)
-                    };
+                let sin_theta_squared = 1.0 - cos_theta * cos_theta;
+                let direction = if ri * ri * sin_theta_squared > 1.0
+                    || reflectance(cos_theta, ri) > fastrand::f32()
+                {
+                    unit_dir.reflect(normal)
+                } else {
+                    unit_dir.refract(normal, ri)
+                };
                 Some(Scattered {
                     attenuation: Vec3A::ONE,
                     scattered: new_ray(hit_pos, direction),
