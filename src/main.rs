@@ -10,10 +10,9 @@ mod vec_util;
 use glam::vec3a;
 use material::Material;
 use mesh::Mesh;
-use obvhs::{BvhBuildParams, cwbvh::builder::build_cwbvh};
+use obvhs::BvhBuildParams;
 use renderer::Renderer;
 use scene::Scene;
-use std::time::Duration;
 
 use crate::{
     camera::Camera,

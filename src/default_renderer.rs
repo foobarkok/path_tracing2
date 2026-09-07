@@ -119,7 +119,7 @@ impl DefaultRenderer {
     }
     fn scatter(
         ray_in: &Ray,
-        t: f32,
+        _t: f32,
         hit_pos: Vec3A,
         front_face: bool,
         material: Material,
@@ -127,7 +127,10 @@ impl DefaultRenderer {
     ) -> Option<Scattered> {
         match material {
             Material::Lambertian { albedo } => {
-                let direction = normal + vec_util::random_unit_vector();
+                let mut direction = normal + vec_util::random_unit_vector();
+                if vec_util::near_zero(direction) {
+                    direction = normal;
+                }
                 Some(Scattered {
                     attenuation: albedo,
                     scattered: new_ray(hit_pos, direction),
