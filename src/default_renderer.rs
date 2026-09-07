@@ -1,5 +1,6 @@
+use crate::camera::Camera;
 use crate::material::Material;
-use crate::scene::{Camera, Object, Renderer, Scene};
+use crate::scene::{Renderer, Scene};
 use crate::vec_util;
 use glam::*;
 use obvhs::ray::Ray;

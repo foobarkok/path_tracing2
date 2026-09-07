@@ -1,6 +1,8 @@
+mod camera;
 mod default_renderer;
 mod material;
 mod mesh;
+mod object;
 mod scene;
 mod vec_util;
 
