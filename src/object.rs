@@ -4,7 +4,7 @@ use obvhs::{Boundable, ray::Ray};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Object {
-    mesh: Mesh,
+    pub mesh: Mesh,
     pub material_id: usize,
 }
 impl Boundable for Object {
