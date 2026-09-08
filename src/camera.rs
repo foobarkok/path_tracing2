@@ -17,6 +17,7 @@ pub struct Camera {
     pub defocus_angle: f32,
 }
 impl Camera {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         aspect_ratio: f32,
         image_width: u32,

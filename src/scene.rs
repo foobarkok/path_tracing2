@@ -1,3 +1,5 @@
+use obvhs::triangle::Triangle;
+
 use crate::{material::Material, mesh::Mesh, object::Object};
 
 #[derive(Debug, Clone)]
@@ -18,5 +20,11 @@ impl Scene {
     }
     pub fn add_object(&mut self, mesh: Mesh, material_id: usize) {
         self.objects.push(Object { mesh, material_id });
+    }
+    pub fn add_tris(&mut self, tris: impl Iterator<Item = Triangle>, material_id: usize) {
+        self.objects.extend(tris.map(|tri| Object {
+            mesh: Mesh::Triangle(tri),
+            material_id,
+        }));
     }
 }

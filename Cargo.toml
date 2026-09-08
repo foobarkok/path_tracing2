@@ -9,3 +9,6 @@ fastrand = "2.5.0"
 glam = "0.33.4"
 obvhs = "0.3.3"
 rayon = "1.12.0"
+
+[build]
+rustflags = ["-C", "target-cpu=native"]

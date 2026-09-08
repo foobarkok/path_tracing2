@@ -29,7 +29,7 @@ pub fn random_unit_vector() -> Vec3A {
             fastrand::f32() * 2.0 - 1.0,
         );
         let lensq = p.length_squared();
-        if 1e-160 < lensq && lensq <= 1.0 {
+        if 1e-12 < lensq && lensq <= 1.0 {
             return p / lensq.sqrt();
         }
     }
